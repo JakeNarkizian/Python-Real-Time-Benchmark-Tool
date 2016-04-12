@@ -10,28 +10,34 @@ class RealTimeBenchmark(object):
     """
     def __init__(self):
         super(RealTimeBenchmark, self).__init__()
-        self.marks = {}
+        self.benchmarks = {}
 
     def __str__(self):
         toRet = ""
-        sortedKeys = sorted(self.marks.keys())
+        sortedKeys = sorted(self.benchmarks.keys())
         for key in sortedKeys:
-            toRet += "%s with %s -> time %f\n" % (key[0], key[1], self.marks[key])
+            toRet += "%s with %s -> time %f\n" % (key[0], key[1], self.benchmarks[key])
 
         return toRet
 
-    def writeCSV(self, writable=sys.stdout):
+    def writeAsCSV(self, writable=sys.stdout, header=None):
         """
-        Write a CSV file to the given writable. If no writable is given stdout is used.
+        Write benchmark results in CSV file format to the given writable. If no writable
+        is given stdout is used.
         """
-        writable.write('function, parameter, time\n')
-        sortedKeys = sorted(self.marks.keys())
-        for key in sortedKeys:
-            writable.write("%s, %s, %s\n" % (key[0], key[1], self.marks[key]))
+        if header is None:
+            header = 'function, scale parameter, time\n'
+        else:
+            header += '\n' if '\n' not in header else ''
+
+        writable.write(header)
+
+        for key in sorted(self.benchmarks.keys()):
+            writable.write("%s, %s, %s\n" % (key[0], key[1], self.benchmarks[key]))
 
 
 
-    def mark(self, scalingFx=None, iter=None, *args):
+    def benchmark(self, scalingFx=None, iter=None, *args):
         """
         The given functions are iterated over, and each function is timed.
 
@@ -40,7 +46,7 @@ class RealTimeBenchmark(object):
 
         :param function scalingFx: A context manager that performs any necessary setup and teardown.
         :param iter: an iterable of args to call scalingFx with.
-        :param function args: One or more functions to call _timeRun benchmarks on
+        :param function args: One or more functions to call _timedRun benchmarks on
 
         """
         if ((iter is None and scalingFx is not None) or
@@ -59,12 +65,12 @@ class RealTimeBenchmark(object):
                 for fx in args:
                     try:
                         # Keys for marks dict are tuples containing function name and scale value from iteration
-                        self.marks[(fx.__name__, i)] = self._timeRun(fx)
+                        self.benchmarks[(fx.__name__, i)] = self._timedRun(fx)
                     except:
                         print("Function '%s' failed with scale value '%d' " % (fx.__name__, i))
 
 
-    def _timeRun(self, fx):
+    def _timedRun(self, fx):
         """
         Times how long it takes to run the given function fx.
 
