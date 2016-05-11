@@ -42,11 +42,12 @@ class RealTimeBenchmark(object):
         The given functions are iterated over, and each function is timed.
 
         Scaling tests is possible by passing a context manager, and an iterable with a range of inputs to
-        pass as args.
+        pass as scaling args. The values yielded by the context manager are passed as args to the benchmarked
+        methods.
 
         :param function scalingFx: A context manager that performs any necessary setup and teardown.
         :param iter: an iterable of args to call scalingFx with.
-        :param function args: One or more functions to call _timedRun benchmarks on
+        :param function args: One or more functions to call _timedRun benchmarks on.
 
         """
         if ((iter is None and scalingFx is not None) or
@@ -61,16 +62,16 @@ class RealTimeBenchmark(object):
         iter = iter or [None]
 
         for i in iter:
-            with scalingFx(i):
+            with scalingFx(i) as fxArgs:
                 for fx in args:
                     try:
                         # Keys for marks dict are tuples containing function name and scale value from iteration
-                        self.benchmarks[(fx.__name__, i)] = self._timedRun(fx)
+                        self.benchmarks[(fx.__name__, i)] = self._timedRun(fx, *fxArgs)
                     except:
                         print("Function '%s' failed with scale value '%d' " % (fx.__name__, i))
 
 
-    def _timedRun(self, fx):
+    def _timedRun(self, fx, *args):
         """
         Times how long it takes to run the given function fx.
 
@@ -79,6 +80,6 @@ class RealTimeBenchmark(object):
         :rtype: int
         """
         start = time.time()
-        fx()
+        fx(*args)
         return time.time() - start
 
